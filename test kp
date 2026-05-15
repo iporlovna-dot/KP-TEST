@@ -1,0 +1,338 @@
+import { useState } from "react";
+
+const ORGS = [
+  { id: 0, label: "Организация 1", accent: "#1a5fa8", font: "'Georgia', serif", priceMultiplier: 1.0 },
+  { id: 1, label: "Организация 2", accent: "#2e7d32", font: "'Trebuchet MS', sans-serif", priceMultiplier: 1.04 },
+  { id: 2, label: "Организация 3", accent: "#6a1b9a", font: "'Palatino Linotype', serif", priceMultiplier: 1.06 },
+];
+
+const defaultOrgs = [
+  { name: "", inn: "", address: "", phone: "", email: "", director: "" },
+  { name: "", inn: "", address: "", phone: "", email: "", director: "" },
+  { name: "", inn: "", address: "", phone: "", email: "", director: "" },
+];
+
+const defaultItems = [{ desc: "", qty: 1, unit: "шт.", price: "" }];
+
+function formatNum(n) {
+  return Number(n).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function genKP(orgData, org, items, client, description, deadline, kpDate) {
+  const accent = org.accent;
+  const font = org.font;
+  const mult = org.priceMultiplier;
+
+  const rows = items.map((it, i) => {
+    const p = parseFloat(it.price) || 0;
+    const q = parseFloat(it.qty) || 0;
+    const unitPrice = p * mult;
+    const total = unitPrice * q;
+    return { ...it, unitPrice, total, i };
+  });
+
+  const grandTotal = rows.reduce((s, r) => s + r.total, 0);
+  const nds = grandTotal * 0.2;
+  const withNds = grandTotal + nds;
+
+  const tableRows = rows.map((r, i) => `
+    <tr style="background:${i % 2 === 0 ? "#f9f9f9" : "#fff"}">
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center">${i + 1}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd">${r.desc}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center">${r.qty}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center">${r.unit}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:right">${formatNum(r.unitPrice)}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:right">${formatNum(r.total)}</td>
+    </tr>`).join("");
+
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8">
+<title>КП — ${orgData.name}</title>
+<style>
+  body { font-family: ${font}; font-size: 13px; color: #222; margin: 0; padding: 0; }
+  @media print { body { padding: 0; } .no-print { display: none; } }
+  .page { max-width: 800px; margin: 0 auto; padding: 32px 40px; }
+  h1 { color: ${accent}; font-size: 20px; margin: 0 0 4px; }
+  .header-bar { border-bottom: 3px solid ${accent}; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .org-block { font-size: 12px; color: #444; }
+  .org-name { font-size: 15px; font-weight: bold; color: ${accent}; margin-bottom: 4px; }
+  .kp-title { text-align: center; font-size: 17px; font-weight: bold; color: ${accent}; margin: 18px 0 10px; letter-spacing: 0.5px; }
+  .meta { font-size: 12px; color: #555; margin-bottom: 14px; }
+  .client-block { background: #f4f4f4; border-left: 4px solid ${accent}; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; }
+  .desc-block { margin-bottom: 16px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+  th { background: ${accent}; color: #fff; padding: 7px 10px; text-align: left; border: 1px solid ${accent}; }
+  .totals { text-align: right; font-size: 13px; margin: 6px 0; }
+  .totals b { color: ${accent}; }
+  .grand { font-size: 15px; font-weight: bold; color: ${accent}; }
+  .footer { margin-top: 30px; font-size: 12px; color: #555; border-top: 1px solid #ddd; padding-top: 14px; display: flex; justify-content: space-between; }
+  .sign { margin-top: 40px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header-bar">
+    <div class="org-block">
+      <div class="org-name">${orgData.name}</div>
+      <div>ИНН: ${orgData.inn}</div>
+      <div>${orgData.address}</div>
+      <div>${orgData.phone} | ${orgData.email}</div>
+    </div>
+    <div style="text-align:right;font-size:12px;color:#555">
+      <div>Дата: ${kpDate}</div>
+      <div>№ КП: ${Math.floor(Math.random()*900)+100}/${new Date().getFullYear()}</div>
+    </div>
+  </div>
+
+  <div class="kp-title">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</div>
+
+  <div class="meta">
+    <b>Заказчик:</b> ${client || "—"}<br>
+    <b>Срок выполнения:</b> ${deadline || "—"}
+  </div>
+
+  <div class="desc-block" id="desc-${org.id}"><b>Описание работ / услуг:</b><br>${description || "—"}</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:32px">№</th>
+        <th>Наименование</th>
+        <th style="width:50px">Кол-во</th>
+        <th style="width:50px">Ед.</th>
+        <th style="width:90px">Цена, руб.</th>
+        <th style="width:100px">Сумма, руб.</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+
+  <div class="totals">Итого без НДС: <b>${formatNum(grandTotal)} руб.</b></div>
+  <div class="totals">НДС 20%: <b>${formatNum(nds)} руб.</b></div>
+  <div class="totals grand">ИТОГО с НДС: ${formatNum(withNds)} руб.</div>
+
+  <div style="margin-top:16px;font-size:12px;color:#555">
+    Настоящее коммерческое предложение действительно в течение 30 дней с момента выдачи.
+  </div>
+
+  <div class="sign">
+    <p><b>Директор:</b> ${orgData.director} / ___________________</p>
+    <p style="color:#aaa">М.П.</p>
+  </div>
+
+  <div class="footer">
+    <div>${orgData.name}</div>
+    <div>${orgData.address}</div>
+    <div>${orgData.phone}</div>
+  </div>
+</div>
+</body></html>`;
+}
+
+export default function App() {
+  const [step, setStep] = useState(0);
+  const [orgs, setOrgs] = useState(defaultOrgs);
+  const [client, setClient] = useState("");
+  const [description, setDescription] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [kpDate, setKpDate] = useState(new Date().toLocaleDateString("ru-RU"));
+  const [items, setItems] = useState(defaultItems);
+  const [loading, setLoading] = useState(false);
+  const [aiDescriptions, setAiDescriptions] = useState(["", "", ""]);
+  const [generated, setGenerated] = useState(false);
+  const [activePreview, setActivePreview] = useState(0);
+  const [htmls, setHtmls] = useState(["", "", ""]);
+
+  const updateOrg = (i, field, val) => {
+    const o = [...orgs]; o[i] = { ...o[i], [field]: val }; setOrgs(o);
+  };
+  const updateItem = (i, field, val) => {
+    const it = [...items]; it[i] = { ...it[i], [field]: val }; setItems(it);
+  };
+  const addItem = () => setItems([...items, { desc: "", qty: 1, unit: "шт.", price: "" }]);
+  const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
+
+  const generate = async () => {
+    setLoading(true);
+    setGenerated(false);
+    let descs = ["", "", ""];
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: `Перефразируй следующее описание работ/услуг тремя разными способами. Сохраняй смысл и все ключевые детали, только меняй формулировки и стиль. Верни ровно 3 варианта в формате JSON: {"v1":"...","v2":"...","v3":"..."}. Не добавляй ничего кроме JSON. Оригинал: "${description}"`
+          }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.map(b => b.text || "").join("") || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+      descs = [parsed.v1 || description, parsed.v2 || description, parsed.v3 || description];
+    } catch {
+      descs = [description, description, description];
+    }
+    setAiDescriptions(descs);
+    const newHtmls = ORGS.map((org, i) =>
+      genKP(orgs[i], org, items, client, descs[i], deadline, kpDate)
+    );
+    setHtmls(newHtmls);
+    setLoading(false);
+    setGenerated(true);
+    setStep(2);
+  };
+
+  const downloadKP = (i) => {
+    const blob = new Blob([htmls[i]], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `КП_${orgs[i].name || "Организация_" + (i + 1)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const inputStyle = { width: "100%", boxSizing: "border-box", marginBottom: 8 };
+  const labelStyle = { display: "block", fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 3 };
+  const sectionStyle = { background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "16px 20px", marginBottom: 16 };
+
+  return (
+    <div style={{ padding: "1rem 0", maxWidth: 720 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 500, marginBottom: 4 }}>Генератор коммерческих предложений</h2>
+      <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 20 }}>Заполните данные — получите 3 готовых КП</p>
+
+      {step !== 2 && (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            {["Данные КП", "Организации"].map((t, i) => (
+              <button key={i} onClick={() => setStep(i)} style={{ fontWeight: step === i ? 500 : 400, borderColor: step === i ? "var(--color-border-primary)" : undefined }}>
+                {i + 1}. {t}
+              </button>
+            ))}
+          </div>
+
+          {step === 0 && (
+            <>
+              <div style={sectionStyle}>
+                <p style={{ fontWeight: 500, marginBottom: 12, fontSize: 14 }}>Общие сведения</p>
+                <label style={labelStyle}>Заказчик</label>
+                <input style={inputStyle} value={client} onChange={e => setClient(e.target.value)} placeholder="ООО «Название заказчика»" />
+                <label style={labelStyle}>Дата КП</label>
+                <input style={{ ...inputStyle, width: "auto" }} value={kpDate} onChange={e => setKpDate(e.target.value)} />
+                <label style={labelStyle}>Срок выполнения</label>
+                <input style={inputStyle} value={deadline} onChange={e => setDeadline(e.target.value)} placeholder="например: 30 рабочих дней" />
+                <label style={labelStyle}>Описание работ / услуг</label>
+                <textarea rows={4} style={{ ...inputStyle, resize: "vertical" }} value={description} onChange={e => setDescription(e.target.value)} placeholder="Опишите работы или услуги..." />
+              </div>
+
+              <div style={sectionStyle}>
+                <p style={{ fontWeight: 500, marginBottom: 12, fontSize: 14 }}>Позиции и цены</p>
+                <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", padding: "4px 6px", color: "var(--color-text-secondary)", fontWeight: 400 }}>Наименование</th>
+                      <th style={{ width: 60, textAlign: "center", padding: "4px 6px", color: "var(--color-text-secondary)", fontWeight: 400 }}>Кол-во</th>
+                      <th style={{ width: 70, textAlign: "center", padding: "4px 6px", color: "var(--color-text-secondary)", fontWeight: 400 }}>Ед.</th>
+                      <th style={{ width: 100, textAlign: "right", padding: "4px 6px", color: "var(--color-text-secondary)", fontWeight: 400 }}>Цена (база)</th>
+                      <th style={{ width: 30 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((it, i) => (
+                      <tr key={i}>
+                        <td style={{ padding: "3px 4px" }}><input value={it.desc} onChange={e => updateItem(i, "desc", e.target.value)} style={{ width: "100%" }} placeholder="Название позиции" /></td>
+                        <td style={{ padding: "3px 4px" }}><input type="number" value={it.qty} onChange={e => updateItem(i, "qty", e.target.value)} style={{ width: "100%", textAlign: "center" }} /></td>
+                        <td style={{ padding: "3px 4px" }}><input value={it.unit} onChange={e => updateItem(i, "unit", e.target.value)} style={{ width: "100%" }} /></td>
+                        <td style={{ padding: "3px 4px" }}><input type="number" value={it.price} onChange={e => updateItem(i, "price", e.target.value)} style={{ width: "100%", textAlign: "right" }} placeholder="0" /></td>
+                        <td style={{ padding: "3px 4px", textAlign: "center" }}>
+                          {items.length > 1 && <button onClick={() => removeItem(i)} style={{ padding: "2px 6px", fontSize: 12 }}>✕</button>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <button onClick={addItem} style={{ marginTop: 8, fontSize: 13 }}>+ Добавить позицию</button>
+              </div>
+
+              <div style={{ textAlign: "right" }}>
+                <button onClick={() => setStep(1)} style={{ fontWeight: 500 }}>Далее: Организации →</button>
+              </div>
+            </>
+          )}
+
+          {step === 1 && (
+            <>
+              {ORGS.map((org, i) => (
+                <div key={i} style={{ ...sectionStyle, borderLeft: `3px solid ${org.accent}` }}>
+                  <p style={{ fontWeight: 500, marginBottom: 12, fontSize: 14, color: org.accent }}>
+                    {org.label} <span style={{ fontSize: 11, color: "var(--color-text-secondary)", fontWeight: 400 }}>
+                      (цены ×{(org.priceMultiplier * 100).toFixed(0)}%)
+                    </span>
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+                    {[["name","Название организации"],["inn","ИНН"],["address","Адрес"],["phone","Телефон"],["email","E-mail"],["director","ФИО директора"]].map(([f, l]) => (
+                      <div key={f}>
+                        <label style={labelStyle}>{l}</label>
+                        <input style={inputStyle} value={orgs[i][f]} onChange={e => updateOrg(i, f, e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+                <button onClick={() => setStep(0)}>← Назад</button>
+                <button onClick={generate} disabled={loading} style={{ fontWeight: 500 }}>
+                  {loading ? "Генерация..." : "Сгенерировать 3 КП ↗"}
+                </button>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      {generated && step === 2 && (
+        <>
+          <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 16 }}>
+            3 КП готовы. Просмотрите и скачайте каждое.
+          </p>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            {ORGS.map((org, i) => (
+              <button key={i} onClick={() => setActivePreview(i)}
+                style={{ fontWeight: activePreview === i ? 500 : 400, borderColor: activePreview === i ? org.accent : undefined, color: activePreview === i ? org.accent : undefined }}>
+                {orgs[i].name || org.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <button onClick={() => downloadKP(activePreview)}>
+              <i className="ti ti-download" aria-hidden="true" style={{ marginRight: 6 }}></i>
+              Скачать КП {activePreview + 1}
+            </button>
+            <button onClick={() => { setGenerated(false); setStep(0); }}>← Изменить данные</button>
+          </div>
+
+          <div style={{ border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
+            <iframe
+              key={activePreview}
+              srcDoc={htmls[activePreview]}
+              style={{ width: "100%", height: 600, border: "none" }}
+              title={`Предпросмотр КП ${activePreview + 1}`}
+            />
+          </div>
+
+          <p style={{ fontSize: 11, color: "var(--color-text-secondary)", marginTop: 8 }}>
+            Чтобы сохранить как PDF — откройте скачанный HTML-файл в браузере и нажмите Ctrl+P → «Сохранить как PDF».
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
