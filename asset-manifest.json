@@ -1,16 +1,15 @@
 {
   "files": {
-    "main.css": "/KP-TEST/static/css/main.f855e6bc.css",
-    "main.js": "/KP-TEST/static/js/main.66290ae7.js",
+    "main.css": "/KP-TEST/static/css/main.e6c13ad2.css",
+    "main.js": "/KP-TEST/static/js/main.e6901f1c.js",
     "static/js/453.838dc17b.chunk.js": "/KP-TEST/static/js/453.838dc17b.chunk.js",
-    "static/media/logo.svg": "/KP-TEST/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
     "index.html": "/KP-TEST/index.html",
-    "main.f855e6bc.css.map": "/KP-TEST/static/css/main.f855e6bc.css.map",
-    "main.66290ae7.js.map": "/KP-TEST/static/js/main.66290ae7.js.map",
+    "main.e6c13ad2.css.map": "/KP-TEST/static/css/main.e6c13ad2.css.map",
+    "main.e6901f1c.js.map": "/KP-TEST/static/js/main.e6901f1c.js.map",
     "453.838dc17b.chunk.js.map": "/KP-TEST/static/js/453.838dc17b.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.f855e6bc.css",
-    "static/js/main.66290ae7.js"
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.e6901f1c.js"
   ]
 }
